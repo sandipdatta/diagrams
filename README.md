@@ -43,7 +43,11 @@ sequenceDiagram
 ```
 
 #### Setup Steps Description
-1.  **Create Connection:** An administrator executes a `CREATE CONNECTION` command in BigQuery. **Why:** This is the foundational step that creates a secure, reusable channel for BigQuery to communicate with external GCP services like Vertex AI, without exposing credentials in code.
+1.  **Create Connection:** An administrator executes the `bq mk` command in the gcloud CLI to create a connection. **Why:** This is the foundational step that creates a secure, reusable channel for BigQuery to communicate with external GCP services like Vertex AI, without exposing credentials in code. An appropriate GCP project and region must be selected for the connection.
+    ```bash
+    bq mk --connection --location=REGION --project_id=PROJECT_ID \
+        --connection_type=CLOUD_RESOURCE CONNECTION_ID_VAI
+    ```
 2.  **Grant IAM Role:** The administrator grants the `Vertex AI User` IAM role to the connection's Service Account. **Why:** This is a critical security measure that follows the principle of least privilege. It ensures the connection is only authorized to perform its specific task (invoking the AI model) and nothing else.
 3.  **Create Model:** The administrator runs a `CREATE MODEL` command in BigQuery. **Why:** This step abstracts the complexity of a direct API call into a simple, reusable SQL function. It empowers data analysts to leverage powerful AI models using familiar SQL, without needing to write complex application code.
 
@@ -114,7 +118,11 @@ sequenceDiagram
 
 #### Setup Steps Description
 1.  **Deploy Cloud Function:** An administrator deploys a Cloud Function that contains code to call the SDP API. **Why:** BigQuery cannot call the SDP API directly. The Cloud Function acts as a lightweight middleware, bridging the gap between a SQL query and the redaction service.
-2.  **Create Connection for Cloud Function:** A second, separate connection is created in BigQuery. **Why:** Just as a connection is needed for Vertex AI, a dedicated, secure channel is required for BigQuery to be able to invoke the new Cloud Function.
+2.  **Create Connection for Cloud Function:** A second, separate connection is created using the `bq mk` command. **Why:** Just as a connection is needed for Vertex AI, a dedicated, secure channel is required for BigQuery to be able to invoke the new Cloud Function. This command registers the connection with BigQuery, making it available for use in remote functions. An appropriate GCP project and region must be selected.
+    ```bash
+    bq mk --connection --location=REGION --project_id=PROJECT_ID \
+        --connection_type=CLOUD_FUNCTION CONNECTION_ID_CF
+    ```
 3.  **Create Remote Function:** The administrator creates a `REMOTE FUNCTION` in BigQuery. **Why:** This abstracts the call to the Cloud Function into a simple, reusable SQL function (e.g., `redact_sms()`). This makes the entire redaction process easily accessible within any BigQuery query.
 4.  **Grant Permissions:** The administrator grants IAM roles to allow BigQuery to invoke the Cloud Function (`Cloud Function Invoker`) and for the Cloud Function to call the SDP API (`SDP User`). **Why:** This multi-stage permissioning ensures the entire chain of operations is secure and adheres to the principle of least privilege.
 5.  **Create Vertex AI Model:** The setup from Phase 1 is still required. **Why:** Redaction and categorization are two distinct steps. The remote model for Vertex AI is still needed for the final classification step after the data has been redacted.
@@ -161,3 +169,5 @@ sequenceDiagram
 7.  **Return Category:** The Gemini model returns a category based on the non-sensitive parts of the message. **Why:** The model can still effectively classify the message's intent (e.g., "claim update") without needing to know the specific personal details.
 8.  **Insert Results:** The query inserts the original SMS, the redacted SMS, and the category into the results table. **Why:** Storing all three pieces of information provides a complete audit trail. It allows for analysis of the redaction process itself while providing the clean, categorized data for general business analytics.
 9.  **Query Succeeded:** BigQuery reports the successful completion of the multi-step query back to Composer. **Why:** This confirms that the entire, more complex workflow has finished successfully.
+
+```
