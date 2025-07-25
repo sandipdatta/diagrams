@@ -55,29 +55,30 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant C as Cloud Composer
+    participant scheduler as AzDO Task Scheduler / dbt
     participant BQ as BigQuery
     participant VAI as Vertex AI (Gemini)
 
-    C->>BQ: 1. Execute Categorisation Query
+    scheduler->>BQ: 1. Execute Categorization dbt model
     activate BQ
     BQ->>VAI: 2. ML.GENERATE_TEXT(sms_text)
     activate VAI
     VAI-->>BQ: 3. Return category
     deactivate VAI
-    BQ->>BQ: 4. Insert results into categorised table
+    BQ->>BQ: 4. Insert results into categorized table
     deactivate BQ
-    BQ-->>C: 5. Query Succeeded
+    BQ-->>scheduler: 5. Query Succeeded
 ```
 
 #### Daily Process Steps Description
-1.  **Execute Query:** A Cloud Composer DAG, running on a daily schedule, triggers a `BigQueryOperator`. **Why:** Using an orchestrator like Cloud Composer ensures the process runs reliably and automatically on a schedule, with built-in logging and retry mechanisms.
-2.  **Generate Text:** The query calls the `ML.GENERATE_TEXT` function, sending the raw SMS text to the Gemini model. **Why:** This is the core value-add of the solution, where the AI model is invoked seamlessly from within the data warehouse, bringing AI capabilities directly to the data.
-3.  **Return Category:** The Gemini model processes the text and returns a predicted category. **Why:** This is the output of the AI's analysis, providing the structured, classified data that is the goal of the project.
-4.  **Insert Results:** The query inserts the original SMS and its new category into a results table. **Why:** Storing the results creates a clean, analysed dataset. This prevents re-processing the same data and provides a ready-to-use table for dashboards and analytics.
-5.  **Query Succeeded:** BigQuery reports the successful completion back to Cloud Composer. **Why:** This feedback is essential for the orchestrator to know the task is complete, log the success, and trigger any downstream dependencies.
+1.  **Execute dbt Model:** An Azure DevOps pipeline, running on a daily schedule, triggers a `dbt run` command which will execute  SQL transformation logic on the DBT model.
+2.  **Generate Text:** The the DBT model calls the `ML.GENERATE_TEXT` function, sending the raw SMS text to the Gemini model. 
+3.  **Return Category:** The Gemini model processes the text and returns a predicted category as a column.
+4.  **Insert Results:** The DBT model inserts the original SMS and its new category into a results table. 
+5.  **Query Succeeded:** BigQuery reports the successful completion back to dbt.
 
 ---
+
 
 ## Phase 2: Categorisation with Redaction (Production)
 
