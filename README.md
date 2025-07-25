@@ -59,7 +59,7 @@ sequenceDiagram
     participant BQ as BigQuery
     participant VAI as Vertex AI (Gemini)
 
-    scheduler->>BQ: 1. Execute Categorization dbt model
+    scheduler->>BQ: 1. Execute Categorisation dbt model
     activate BQ
     BQ->>VAI: 2. ML.GENERATE_TEXT(sms_text)
     activate VAI
