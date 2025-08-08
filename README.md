@@ -55,7 +55,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant scheduler as AzDO Task Scheduler / dbt
+    participant scheduler as Composer
     participant BQ as BigQuery
     participant VAI as Vertex AI (Gemini)
 
